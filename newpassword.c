@@ -1,6 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #define ConstXOR 50
 #define MaxSize 100
 
@@ -11,6 +12,10 @@ void XOR(char* Text) {
         Text[i] ^= ConstXOR;
         // printf("%c \n", Text[i]);
     }
+}
+
+int password_check(const char* correct_password, const char* password){
+    return strcmp(correct_password, password) == 0;
 }
 
 int main() {
@@ -41,11 +46,14 @@ int main() {
     // XOR(password);
 
     // Сравниваем пароли
-    if (strcmp(correct_password, password) == 0) {
-        printf("Correct password\n");
-    } else {
-        printf("Incorrect password\n");
-    }
+   if(!password_check(correct_password, password)){
+    printf("Incorrect password\n");
+   }
+   else{
+    printf("Correct password\n");
+   }
+
+   system("pause");
 
     return 0;
 }
