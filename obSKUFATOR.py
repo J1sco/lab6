@@ -1,63 +1,67 @@
-import re
 import random
-import string
+import re
 
-def obfuscate_c_code(input_file, output_file):
-    # Читаем исходный код
-    with open(input_file, 'r') as f:
-        code = f.read()
-    
-    # 1. Удаляем комментарии
-    code = re.sub(r'/\*.*?\*/', '', code, flags=re.DOTALL)  # Многострочные
-    code = re.sub(r'//.*?$', '', code, flags=re.MULTILINE)   # Однострочные
-    
-    # 2. Удаляем лишние пробелы
-    code = re.sub(r'[ \t]+', ' ', code)          # Множественные пробелы/табы
-    code = re.sub(r'^[ \t]+', '', code, flags=re.MULTILINE)  # Пробелы в начале строки
-    code = re.sub(r'[ \t]+$', '', code, flags=re.MULTILINE)  # Пробелы в конце строки
-    code = re.sub(r'\n\s*\n', '\n', code)        # Пустые строки
-    
-    # 3. Заменяем имена переменных и функций
-    variables = set(re.findall(r'\b(int|float|double|char)\s+([a-zA-Z_]\w*)', code))
-    functions = set(re.findall(r'\b([a-zA-Z_]\w*)\s*\(', code))
-    
-    # Создаем словари для замены имен
-    var_map = {name: f'v{random.randint(1, 999)}' for _, name in variables}
-    func_map = {name: f'f{random.randint(1, 999)}' for name in functions}
-    
-    # Заменяем имена переменных
-    for old_name, new_name in var_map.items():
-        code = re.sub(r'\b' + old_name + r'\b', new_name, code)
-    
-    # Заменяем имена функций (кроме main)
-    for old_name, new_name in func_map.items():
-        if old_name != 'main':
-            code = re.sub(r'\b' + old_name + r'\b', new_name, code)
-    
-    # 4. Добавляем мусорный код
-    junk_code = generate_junk_code()
-    code = code.replace('{', '{\n' + junk_code, 1)  # Добавляем в начало main
-    
-    # Записываем обфусцированный код
-    with open(output_file, 'w') as f:
-        f.write(code)
+def obfuscate(input_file, output_file):
+    code = input_file.read()
+    untouchable = ['#include', '#define', '_CRT_SECURE_NO_WARNINGS', '<stdio.h>', '<stdlib.h>', '<string.h >', '<locale.h>'] #трогать эти штуки нельзя, тогда код на C/C++ работать не будет 
 
-def generate_junk_code():
-    """Генерирует простой мусорный код"""
-    junk = []
-    for _ in range(random.randint(3, 17)):  # 3 мусорных элемента
-        # Мусорная переменная
-        var_name = random.choice(['cnt', 'compare', 'move', 'teamlead', "Vorob'ev", 'Dota 2 is a piece of shit', 'wesrdthfgj']) + str(random.randint(1, 99))
-        var_type = random.choice(['int', 'float', 'double', 'long'])
-        value = random.randint(0, 100) if var_type == 'int' else f"{random.random()*10:.1f}f"
-        junk.append(f"{var_type} {var_name} = {value};")
+    code = re.sub('//.*', '', code) #удаление однстрочных комментов
+    code = re.sub(r'/\*.*?\*/', '', code) # удаление многострочных комментов
+
+    RANDOM_TYPES = ['int', 'float', 'double', 'long int', 'long long int']
+
+    # Словарь для хранения соответствия старых и новых имен
+    name_mapping = {}
+    type_mapping = {}
+
+    def generate_random_name(): # генератор нового имени 
+        prefix = random.choice(['gamma', 'dove', 'hippopotamus', 'numerolog89212215657', 'lipton', 'carti_taro', 'DikiyBoris', 'DomashniyVladimir', 'This_is_our_obfuskator', 'Freestyle_wrestling', 'bread'])
+        suffix = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz', k=4))
+        return f"{prefix}_{suffix}"
+
+    pattern = r'\b(int|float|double)\s+([a-zA-Z_]\w*(?:\s*,\s*[a-zA-Z_]\w*)*)' # паттерн для поиска переменных
+    matches = re.findall(pattern, code) # сам поиск 
+
+    # Маппинги для имен и типов
+    for original_type, vars_str in matches:
+        # Маппинг для типа
+        if original_type not in type_mapping:
+            type_mapping[original_type] = random.choice(RANDOM_TYPES)
         
-        # Мусорный if
-        junk.append(f"if ({var_name} > {random.randint(0, 50)}) {{ }}")
-    
-    return '\n'.join(junk)
+        # Маппинг для имен переменных
+        var_names = [name.strip() for name in vars_str.split(',')]
+        for var_name in var_names:
+            if var_name not in name_mapping:
+                name_mapping[var_name] = generate_random_name()
 
-# Пример использования
-if __name__ == "__main__":
-    obfuscate_c_code('passworxor.c', 'Scufpasswordxor.c')
-    print("Обскуфация завершена! Теперь код - скуфчик")
+    def replace_match(match): #Функция для замены в коде
+        original_type = match.group(1)
+        vars_str = match.group(2)
+        
+        new_type = type_mapping[original_type] #Получаем новый тип
+        
+        var_names = [name.strip() for name in vars_str.split(',')] #Заменяем переменные
+        new_vars = [name_mapping[name] for name in var_names]
+        
+        return f"{new_type} {', '.join(new_vars)}"
+
+    code = re.sub(pattern, replace_match, code) # Заменяем все вхождения в коде 
+
+
+def trash_code(): #создаём бесполезный if
+    trash = []
+    trash_name = random.choice(['counter', 'num', 'places', 'tablet', 'position'])
+    trash_type = random.choice(['int', 'float', 'double', 'long int', 'long long int'])
+    value = random.randint(0, 12683)
+    trash.append(f"if ({random.randint(0, 995)} > {random.randint(0, 995)}) {{\n    {trash_type} {trash_name} = {value};\n    {trash_name}++;\n}}")
+ 
+def trash_var(): #создаем рандомное кол-во мусорных переменных
+    trash_var_code = []
+    for _ in range(random.randint(1, 10)):
+        trash_var_name = random.choice(['keys', 'crypto', 'cipher', 'dove', 'goose', 'trash_variable', 'rabbit', 'chocolate', 'orange', 'camp', 'mother', 'father', 'P_M_M_L', 'white'])
+        trash_var_type = random.choice(['int', 'long int', 'long long int', 'float', 'double'])
+        trash_var_value = random.randint(0, 2006)
+        trash_var_code.append(f'{trash_var_type} {trash_var_name} = {trash_var_value};\n')
+    return trash_var_code
+
+input_file = open('passwrodxor.cpp', 'r')
