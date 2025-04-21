@@ -1,0 +1,9 @@
+{
+  "remove_spaces": true,
+  "remove_tabs": true,
+  "remove_newlines": true,
+  "remove_comments": true,
+  "add_trash_variables": true,
+  "add_trash_ifs": true,
+  "add_trash_functions": true
+}
