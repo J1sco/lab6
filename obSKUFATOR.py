@@ -25,25 +25,35 @@ def obfuscate(input_file, output_file, config):
         return code
 
     def remove_spaces_tabs(code):
-        if config["remove_tabs"]:
+        if config.get("remove_tabs", False):
             code = code.replace('\t', '')
-        if config["remove_spaces"]:
-            code = re.sub(r'[ ]{2,}', ' ', code)
+        if config.get("remove_spaces", False):
+            code = re.sub(r' {2,}', ' ', code)
         return code
 
     def remove_newlines(code):
+        # стандартное удаление лишних переносов строк
         code = re.sub(r'\n{3,}', '\n\n', code)
         code = re.sub(r'\n+\s*}', '}', code)
         code = re.sub(r'{\n+', '{', code)
         code = re.sub(r'\n\s*\n', '\n', code)
         return code
 
+    def collapse_to_one_line(code):
+        # превращаем код в одну строку, оставляя пробелы после важных символов
+        code = re.sub(r'\s*\n\s*', ' ', code)  # заменяем все переносы пробелом
+        code = re.sub(r'\s*([{};])\s*', r'\1 ', code)  # оставляем пробелы после ; { }
+        code = re.sub(r'\s+', ' ', code)  # убираем двойные пробелы
+        return code.strip()
+
     def clean_code(code):
-        if config["remove_comments"]:
+        if config.get("remove_comments", False):
             code = remove_comments(code)
         code = remove_spaces_tabs(code)
-        if config["remove_newlines"]:
+        if config.get("remove_newlines", False):
             code = remove_newlines(code)
+        if config.get("collapse_all_to_one_line", False):
+            code = collapse_to_one_line(code)
         return code
 
     def generate_random_name():
@@ -79,20 +89,20 @@ def obfuscate(input_file, output_file, config):
     name_pool = load_names_from_file()
     ALL_TYPES = ['int', 'float', 'double', 'long int', 'long long int', 'char']
 
-    if config["add_trash_functions"]:
+    if config.get("add_trash_functions", False):
         code = insert_trash_functions(code)
 
     main_match = re.search(r'int main\s*\([^)]*\)\s*\{', code)
-    if main_match and (config["add_trash_variables"] or config["add_trash_ifs"]):
+    if main_match and (config.get("add_trash_variables", False) or config.get("add_trash_ifs", False)):
         main_start = main_match.end()
         inserts = []
-        if config["add_trash_variables"]:
+        if config.get("add_trash_variables", False):
             for _ in range(random.randint(3, 6)):
                 var_type = random.choice(ALL_TYPES)
                 name = generate_random_name()
                 value = f"'{random.choice('ABCDE')}'" if var_type == 'char' else random.randint(1, 1000)
                 inserts.append(f"{var_type} {name} = {value};")
-        if config["add_trash_ifs"]:
+        if config.get("add_trash_ifs", False):
             inserts.append(f"if ({random.randint(1,100)} > {random.randint(1,100)}) {{ int {generate_random_name()} = {random.randint(0,999)}; }}")
         code = code[:main_start] + "\n" + '\n'.join(inserts) + "\n" + code[main_start:]
 
