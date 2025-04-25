@@ -32,7 +32,6 @@ def obfuscate(input_file, output_file, config):
         return code
 
     def remove_newlines(code):
-        # стандартное удаление лишних переносов строк
         code = re.sub(r'\n{3,}', '\n\n', code)
         code = re.sub(r'\n+\s*}', '}', code)
         code = re.sub(r'{\n+', '{', code)
@@ -40,21 +39,26 @@ def obfuscate(input_file, output_file, config):
         return code
 
     def collapse_to_one_line(code):
-        # превращаем код в одну строку, оставляя пробелы после важных символов
-        code = re.sub(r'\s*\n\s*', ' ', code)  # заменяем все переносы пробелом
-        code = re.sub(r'\s*([{};])\s*', r'\1 ', code)  # оставляем пробелы после ; { }
-        code = re.sub(r'\s+', ' ', code)  # убираем двойные пробелы
+        code = re.sub(r'\s*\n\s*', ' ', code)
+        code = re.sub(r'\s*([{};])\s*', r'\1 ', code)
+        code = re.sub(r'\s+', ' ', code)
         return code.strip()
 
     def clean_code(code):
+        lines = code.splitlines()
+        preprocessor_lines = [line for line in lines if line.strip().startswith('#')]
+        other_lines = [line for line in lines if not line.strip().startswith('#')]
+        other_code = '\n'.join(other_lines)
+
         if config.get("remove_comments", False):
-            code = remove_comments(code)
-        code = remove_spaces_tabs(code)
+            other_code = remove_comments(other_code)
+        other_code = remove_spaces_tabs(other_code)
         if config.get("remove_newlines", False):
-            code = remove_newlines(code)
+            other_code = remove_newlines(other_code)
         if config.get("collapse_all_to_one_line", False):
-            code = collapse_to_one_line(code)
-        return code
+            other_code = collapse_to_one_line(other_code)
+
+        return '\n'.join(preprocessor_lines) + '\n' + other_code.strip()
 
     def generate_random_name():
         return f"{random.choice(name_pool)}_{random.randint(1000, 9999)}"
@@ -63,8 +67,16 @@ def obfuscate(input_file, output_file, config):
         ret_type = random.choice(ALL_TYPES)
         param_type = random.choice(ALL_TYPES)
         param_name = generate_random_name()
+        var_name = generate_random_name()
+
+        # Значение по типу, char — только безопасные значения
+        if param_type == 'char':
+            var_value = random.randint(0, 127)
+        else:
+            var_value = random.randint(0, 1000)
+
         return f"""{ret_type} {generate_random_name()}({param_type} {param_name}) {{
-    {random.choice(ALL_TYPES)} {generate_random_name()} = {random.randint(0, 1000)};
+    {param_type} {var_name} = {var_value};
     if ({random.randint(0,100)} > {random.randint(0,100)}) {{
         return {random.randint(0, 100)};
     }}
@@ -100,7 +112,10 @@ def obfuscate(input_file, output_file, config):
             for _ in range(random.randint(3, 6)):
                 var_type = random.choice(ALL_TYPES)
                 name = generate_random_name()
-                value = f"'{random.choice('ABCDE')}'" if var_type == 'char' else random.randint(1, 1000)
+                if var_type == 'char':
+                    value = f"'{random.choice('ABCDE')}'"
+                else:
+                    value = random.randint(1, 1000)
                 inserts.append(f"{var_type} {name} = {value};")
         if config.get("add_trash_ifs", False):
             inserts.append(f"if ({random.randint(1,100)} > {random.randint(1,100)}) {{ int {generate_random_name()} = {random.randint(0,999)}; }}")
@@ -111,7 +126,7 @@ def obfuscate(input_file, output_file, config):
 
 if __name__ == "__main__":
     with open('/home/mefodiy/Documents/codes/newpassword.c', 'r') as infile:
-        with open('/home/mefodiy/Documents/codes/scuf.c', 'w') as outfile:
+        with open('/home/mefodiy/Documents/codes/ss.c', 'w') as outfile:
             config = load_config()
             obfuscate(infile, outfile, config)
 
