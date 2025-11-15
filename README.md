@@ -17,8 +17,14 @@
 
 ### Запуск чат-бота:
 
+Интерактивный режим:
 ```bash
 python3 chatbot.py
+```
+
+Демонстрационный режим:
+```bash
+python3 demo_chatbot.py
 ```
 
 ### Команды чат-бота:
@@ -98,6 +104,7 @@ with open('input.c', 'r') as infile:
 ## Файлы проекта:
 
 - `chatbot.py` - чат-бот
+- `demo_chatbot.py` - демонстрация возможностей чат-бота
 - `obSKUFATOR.py` - обфускатор кода
 - `config.json` - конфигурация обфускатора
 - `names_for_obfuskator.txt` - список имён для генерации случайных переменных
